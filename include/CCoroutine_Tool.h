@@ -17,11 +17,14 @@ enum AoiMachineType {
 	OWL1000_XYZT_S = 5,
 };
 
+class CCoroutine_ToolParam;
+
 class DLL_CLASSEXP CCoroutine_Tool
 {
 public:
-	CCoroutine_Tool();
-	~CCoroutine_Tool();
+	static CCoroutine_Tool *instance();
+
+	int updataini();//重新载入ini文件
 
 	//获取对焦飞拍的PEG点
 	//objNum物镜倍率"1X","2X"
@@ -42,6 +45,14 @@ public:
 
 	//获取治具抬升高度
 	double getfixturesHeight(std::string objNum);
+
+	//获取对焦拟合方式
+	int getfocusFitType();	//0新方式 1老方式
 private:
-	
+	CCoroutine_Tool();
+	~CCoroutine_Tool();
+
+	CCoroutine_ToolParam *p;
 };
+
+#define CCoroutine_Tool_Get CCoroutine_Tool::instance()
