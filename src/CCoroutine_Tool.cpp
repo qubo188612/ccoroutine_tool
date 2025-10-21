@@ -10,6 +10,7 @@ public:
 	CSimpleIniA setting_ini;
 	CSimpleIniA devicesetting_ini;
 	CSimpleIniA product_ini;
+	CSimpleIniA axis_ini;
 };
 
 CCoroutine_Tool::CCoroutine_Tool()
@@ -45,6 +46,11 @@ int CCoroutine_Tool::updataini()//重新载入ini文件
 	rc = p->product_ini.LoadFile("CustomData/motion/device/product.ini");	// 另一种方式：SI_Error LoadFile(FILE * a_fpFile);
 	if (rc < 0) {
 		printf("加载 setting_ini 文件失败！\n");
+		return -1;
+	}
+	rc = p->axis_ini.LoadFile("CustomData/motion/Axis.ini");	// 另一种方式：SI_Error LoadFile(FILE * a_fpFile);
+	if (rc < 0) {
+		printf("加载 axis_ini 文件失败！\n");
 		return -1;
 	}
 	return 0;
@@ -150,4 +156,65 @@ int CCoroutine_Tool::getfocusFitType()
 {
 	int focusFitType = std::stoi(p->setting_ini.GetValue("General", "main-settings.focusFitType", "0"));
 	return focusFitType;
+}
+
+void CCoroutine_Tool::getAxisIniSpeed(AoiAxisIniType type, AoiAxisIniSpeedMode mode, double &SpeedHigh, double &SpeedAcc, double &SpeedDcc)
+{
+	std::string Section;
+	std::string Key_head;
+	std::string KeySpeedHigh, KeySpeedAcc, KeySpeedDcc;
+	if (type == AOI_AxisIni_X)
+	{
+		Section = u8"检测平台X轴";
+	}
+	else if(type == AOI_AxisIni_Y)
+	{
+		Section = u8"检测平台Y轴";
+	}
+	else if(type == AOI_AxisIni_Z)
+	{
+		Section = u8"检测平台Z轴";
+	}
+	else if(type == AOI_AxisIni_T)
+	{
+		Section = u8"检测平台T轴";
+	}
+	if (mode == AOI_AxisIni_AUTO)
+	{
+		Key_head = "Auto";
+	}
+	else if (mode == AOI_AxisIni_MANUAL)
+	{
+		Key_head = "Manual";
+	}
+	KeySpeedHigh = Key_head + "SpeedHigh";
+	KeySpeedAcc = Key_head + "SpeedAcc";
+	KeySpeedDcc = Key_head + "SpeedDcc";
+	SpeedHigh = std::stod(p->axis_ini.GetValue(Section.c_str(), KeySpeedHigh.c_str(), "500"));
+	SpeedAcc = std::stod(p->axis_ini.GetValue(Section.c_str(), KeySpeedAcc.c_str(), "5000"));
+	SpeedDcc = std::stod(p->axis_ini.GetValue(Section.c_str(), KeySpeedDcc.c_str(), "5000"));
+}
+
+//获取axis_ini信息
+const char * CCoroutine_Tool::get_axis_ini(const char *Section, const char *key, const char *default)
+{
+	return p->axis_ini.GetValue(Section, key, default);
+}
+
+//获取product_ini信息
+const char * CCoroutine_Tool::get_product_ini(const char *Section, const char *key, const char *default)
+{
+	return p->product_ini.GetValue(Section, key, default);
+}
+
+//获取devicesetting_ini信息
+const char * CCoroutine_Tool::get_devicesetting_ini(const char *Section, const char *key, const char *default)
+{
+	return p->devicesetting_ini.GetValue(Section, key, default);
+}
+
+//获取get_setting_ini信息
+const char * CCoroutine_Tool::get_setting_ini(const char *Section, const char *key, const char *default)
+{
+	return p->setting_ini.GetValue(Section, key, default);
 }

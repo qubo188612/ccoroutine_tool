@@ -17,6 +17,18 @@ enum AoiMachineType {
 	OWL1000_XYZT_S = 5,
 };
 
+enum AoiAxisIniType {
+	AOI_AxisIni_X = 0,
+	AOI_AxisIni_Y = 1,
+	AOI_AxisIni_Z = 2,
+	AOI_AxisIni_T = 3,
+};
+
+enum AoiAxisIniSpeedMode {
+	AOI_AxisIni_AUTO = 0,
+	AOI_AxisIni_MANUAL = 1,
+};
+
 class CCoroutine_ToolParam;
 
 class DLL_CLASSEXP CCoroutine_Tool
@@ -48,6 +60,21 @@ public:
 
 	//获取对焦拟合方式
 	int getfocusFitType();	//0新方式 1老方式
+
+	//获取轴在平时移动时的速度
+	void getAxisIniSpeed(AoiAxisIniType type, AoiAxisIniSpeedMode,double &SpeedHigh,double &SpeedAcc, double &SpeedDcc);
+
+	//获取axis_ini信息
+	const char *get_axis_ini(const char *Section,const char *key, const char *default);
+
+	//获取product_ini信息
+	const char *get_product_ini(const char *Section, const char *key, const char *default);
+
+	//获取devicesetting_ini信息
+	const char *get_devicesetting_ini(const char *Section, const char *key, const char *default);
+
+	//获取get_setting_ini信息
+	const char *get_setting_ini(const char *Section, const char *key, const char *default);
 private:
 	CCoroutine_Tool();
 	~CCoroutine_Tool();
