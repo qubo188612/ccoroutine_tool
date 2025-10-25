@@ -64,6 +64,9 @@ public:
 	//获取轴在平时移动时的速度
 	void getAxisIniSpeed(AoiAxisIniType type, AoiAxisIniSpeedMode,double &SpeedHigh,double &SpeedAcc, double &SpeedDcc);
 
+	//获取孔位转换为物镜倍率信息如A->2X
+	int HoleposToObjlen(std::string objHolePos, std::string &objNum);
+
 	//获取axis_ini信息
 	const char *get_axis_ini(const char *Section,const char *key, const char *default);
 

@@ -1,5 +1,6 @@
 #include "CCoroutine_Tool.h"
 #include "SimpleIni.h"
+#include "alg_base_common.h"
 
 class CCoroutine_ToolParam
 {
@@ -11,6 +12,7 @@ public:
 	CSimpleIniA devicesetting_ini;
 	CSimpleIniA product_ini;
 	CSimpleIniA axis_ini;
+	CSimpleIniA calibration_ini;
 };
 
 CCoroutine_Tool::CCoroutine_Tool()
@@ -36,21 +38,31 @@ int CCoroutine_Tool::updataini()//重新载入ini文件
 	rc = p->setting_ini.LoadFile("CustomData/motion/device/setting.ini");	// 另一种方式：SI_Error LoadFile(FILE * a_fpFile);
 	if (rc < 0) {
 		printf("加载 setting_ini 文件失败！\n");
+		LOG_ERROR("CCoroutine_Tool", "load setting_ini failed");
 		return -1;
 	}
 	rc = p->devicesetting_ini.LoadFile("CustomData/hal/deviceSetting.ini");	// 另一种方式：SI_Error LoadFile(FILE * a_fpFile);
 	if (rc < 0) {
 		printf("加载 deviceSetting 文件失败！\n");
+		LOG_ERROR("CCoroutine_Tool", "load deviceSetting failed");
 		return -1;
 	}
 	rc = p->product_ini.LoadFile("CustomData/motion/device/product.ini");	// 另一种方式：SI_Error LoadFile(FILE * a_fpFile);
 	if (rc < 0) {
 		printf("加载 setting_ini 文件失败！\n");
+		LOG_ERROR("CCoroutine_Tool", "load setting_ini failed");
 		return -1;
 	}
 	rc = p->axis_ini.LoadFile("CustomData/motion/Axis.ini");	// 另一种方式：SI_Error LoadFile(FILE * a_fpFile);
 	if (rc < 0) {
 		printf("加载 axis_ini 文件失败！\n");
+		LOG_ERROR("CCoroutine_Tool", "load axis_ini failed");
+		return -1;
+	}
+	rc = p->calibration_ini.LoadFile("CustomData/motion/device/calibration.ini");	// 另一种方式：SI_Error LoadFile(FILE * a_fpFile);
+	{
+		printf("加载 calibration_ini 文件失败！\n");
+		LOG_ERROR("CCoroutine_Tool", "load calibration_ini failed");
 		return -1;
 	}
 	return 0;
@@ -104,10 +116,12 @@ int CCoroutine_Tool::getCalcFocusZPos(std::string objNum, bool isExcellent, doub
 
 	if (!(intervalLelft < intervalRight)) {
 		printf("对焦区间左右极限设置错误(必须左极限 < 右极限)");
+		LOG_ERROR("CCoroutine_Tool", "intervalLelft pos < intervalRight pos");
 		return -1;
 	}
 	if (step <= 0) {
 		printf("物镜景深设置错误");
+		LOG_ERROR("CCoroutine_Tool", "depthField set err");
 		return -2;
 	}
 	//计算飞拍Z位置，从下向上
@@ -193,6 +207,69 @@ void CCoroutine_Tool::getAxisIniSpeed(AoiAxisIniType type, AoiAxisIniSpeedMode m
 	SpeedHigh = std::stod(p->axis_ini.GetValue(Section.c_str(), KeySpeedHigh.c_str(), "500"));
 	SpeedAcc = std::stod(p->axis_ini.GetValue(Section.c_str(), KeySpeedAcc.c_str(), "5000"));
 	SpeedDcc = std::stod(p->axis_ini.GetValue(Section.c_str(), KeySpeedDcc.c_str(), "5000"));
+}
+
+int CCoroutine_Tool::HoleposToObjlen(std::string objHolePos, std::string &objNum)
+{
+	//物镜总数
+	int objNameList = std::stoi(p->devicesetting_ini.GetValue("General", "deviceconfigNode.objMagnificationCofig.objNameList", "0"));
+	if (objNameList<=0)
+	{
+		LOG_ERROR("CCoroutine_Tool", "objNameList number <= 0");
+		return -1;
+	}
+	std::vector<std::string> s_objNameList;
+	s_objNameList.reserve(objNameList);
+	//读取名称
+	for (int i=0;i<objNameList;i++)
+	{
+		std::string stH = "deviceconfigNode.objMagnificationCofig.objNameList.";
+		std::string stL = "%5B";
+		std::string strn = std::to_string(i);
+		std::string stR = "%5D";
+		std::string stT = ".objName";
+		std::string st = stH + stL + strn + stR + stT;
+		std::string len_name=p->devicesetting_ini.GetValue("General", st.c_str(), "");
+		s_objNameList.push_back(len_name);
+	}
+	std::vector<std::string> s_holelist;
+	std::vector<std::string> s_objlist;
+	s_holelist.reserve(s_objNameList.size());
+	s_objlist.reserve(s_objNameList.size());
+	for (int i=0;i< s_objNameList.size();i++)
+	{
+		std::string len = s_objNameList[i];
+		if (len.empty())
+		{
+			continue;
+		}
+		std::string stL = "main-calibration.grpObjPar.";
+		std::string stR = ".objHolePos";
+		std::string st = stL + len + stR;
+		std::string hole_name = p->calibration_ini.GetValue("General", st.c_str(), "");
+		if (hole_name.empty())
+		{
+			continue;
+		}
+		s_holelist.push_back(hole_name);
+		s_objlist.push_back(len);
+	}
+	bool find = false;
+	for (int i = 0; i < s_holelist.size(); i++)
+	{
+		if (objHolePos == s_holelist[i])
+		{
+			find = true;
+			objNum = s_objlist[i];
+			break;
+		}
+	}
+	if (find==false)
+	{
+		LOG_ERROR("CCoroutine_Tool", "not find objNum");
+		return -1;
+	}
+	return 0;
 }
 
 //获取axis_ini信息
